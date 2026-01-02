@@ -1,0 +1,1108 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Road to the Transistor: A Physics Journey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fafaf9;
+            color: #1c1917;
+            scroll-behavior: smooth;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+        }
+
+        .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f5f5f4; }
+        ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
+
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 300px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+
+        .sim-container { width: 100%; height: 300px; background-color: #171717; border-radius: 0.5rem; position: relative; overflow: hidden; }
+
+        .slider-thumb::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #4f46e5; cursor: pointer; }
+        
+        .nav-item.active { background-color: #e7e5e4; border-left: 4px solid #4f46e5; font-weight: 600; }
+
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); transition: all 0.2s ease-in-out; }
+
+        .formula-card { background: rgba(245, 245, 244, 0.8); border: 1px solid #e7e5e4; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; }
+        
+        .tab-button {
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease-in-out;
+        }
+        .tab-button.active {
+            border-bottom: 2px solid #4f46e5;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <!-- Top Navigation (Mobile) -->
+    <div class="md:hidden bg-white shadow-sm sticky top-0 z-50 p-4 border-b border-stone-200">
+        <h1 class="text-lg font-bold text-indigo-700">Physics of Semiconductors</h1>
+        <select id="mobile-nav" class="mt-2 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" onchange="scrollToSection(this.value)">
+            <option value="intro">Introduction</option>
+            <option value="history">0. History</option>
+            <option value="bands">1. Band Structure</option>
+            <option value="carriers">2. Charge Carriers</option>
+            <option value="stats">3. Fermi Statistics</option>
+            <option value="doping">4. Doping</option>
+            <option value="transport">5. Transport</option>
+            <option value="pn-junction">6. P-N Junction</option>
+            <option value="zener">7. Zener Diode</option>
+            <option value="circuit">8. Circuit & Fabrication</option>
+        </select>
+    </div>
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Sidebar Navigation (Desktop) -->
+        <nav class="hidden md:block w-64 bg-white border-r border-stone-200 fixed h-full overflow-y-auto z-40">
+            <div class="p-6">
+                <h1 class="text-xl font-bold text-indigo-700 leading-tight">The Road to the Transistor</h1>
+                <p class="text-xs text-stone-500 mt-2">Interactive Physics Lab</p>
+            </div>
+            <ul class="space-y-1">
+                <li><button onclick="scrollToSection('intro')" id="nav-intro" class="nav-item w-full text-left px-6 py-3 text-sm text-stone-600 hover:bg-stone-50 transition-colors">Introduction</button></li>
+                <li><button onclick="scrollToSection('history')" id="nav-history" class="nav-item w-full text-left px-6 py-3 text-sm text-stone-600 hover:bg-stone-50 transition-colors">0. A Brief History</button></li>
+                <li><button onclick="scrollToSection('bands')" id="nav-bands" class="nav-item w-full text-left px-6 py-3 text-sm text-stone-600 hover:bg-stone-50 transition-colors">1. Energy Band Structure</button></li>
+                <li><button onclick="scrollToSection('carriers')" id="nav-carriers" class="nav-item w-full text-left px-6 py-3 text-sm text-stone-600 hover:bg-stone-50 transition-colors">2. Charge Carriers</button></li>
+                <li><button onclick="scrollToSection('stats')" id="nav-stats" class="nav-item w-full text-left px-6 py-3 text-sm text-stone-600 hover:bg-stone-50 transition-colors">3. Statistical Mechanics</button></li>
+                <li><button onclick="scrollToSection('doping')" id="nav-doping" class="nav-item w-full text-left px-6 py-3 text-sm text-stone-600 hover:bg-stone-50 transition-colors">4. Doping & Types</button></li>
+                <li><button onclick="scrollToSection('transport')" id="nav-transport" class="nav-item w-full text-left px-6 py-3 text-sm text-stone-600 hover:bg-stone-50 transition-colors">5. Transport Mechanisms</button></li>
+                <li><button onclick="scrollToSection('pn-junction')" id="nav-pn-junction" class="nav-item w-full text-left px-6 py-3 text-sm text-stone-600 hover:bg-stone-50 transition-colors">6. The P-N Junction</button></li>
+                <li><button onclick="scrollToSection('zener')" id="nav-zener" class="nav-item w-full text-left px-6 py-3 text-sm text-stone-600 hover:bg-stone-50 transition-colors font-semibold">7. Zener & Breakdown</button></li>
+                <li><button onclick="scrollToSection('circuit')" id="nav-circuit" class="nav-item w-full text-left px-6 py-3 text-sm text-stone-600 hover:bg-stone-50 transition-colors">8. Circuit & Fabrication</button></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 md:ml-64 p-4 md:p-12 max-w-5xl mx-auto space-y-24 pb-32">
+            <section id="intro" class="space-y-6 animate-fade-in">
+                <div class="bg-indigo-50 border-l-4 border-indigo-600 p-6 rounded-r-lg">
+                    <h2 class="text-3xl font-bold text-stone-900 mb-2">Before the Transistor</h2>
+                    <p class="text-stone-700 text-lg">To understand modern electronics, we must first understand the quantum behavior of electrons in crystals. This interactive guide breaks down the theoretical foundations—from atomic orbitals to the P-N junction diode.</p>
+                </div>
+            </section>
+            
+            <section id="history" class="space-y-6 pt-10">
+                <div class="border-b border-stone-200 pb-4">
+                    <h2 class="text-2xl font-bold text-stone-900">0. A Brief History of Rectifiers</h2>
+                    <p class="text-stone-500 mt-1">Before the solid-state revolution.</p>
+                </div>
+                <p class="text-stone-700 leading-relaxed">The ability to convert alternating current (AC) to direct current (DC), known as rectification, was fundamental to the development of radio and electronics. Before the silicon P-N junction, engineers relied on clever but bulky and inefficient devices.</p>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white p-4 rounded-lg shadow-sm border"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Fleming_valve_replica.jpg/440px-Fleming_valve_replica.jpg" alt="Fleming Valve" class="rounded mb-2 h-40 w-full object-contain"><h3 class="font-bold">Vacuum Tubes (c. 1904)</h3><p class="text-xs text-stone-600">John Ambrose Fleming's "valve" used thermionic emission. A hot filament emitted electrons that could only travel to a positive plate, allowing current flow in one direction only. They were fragile, bulky, and consumed significant power.</p></div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm border"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Crystal_radio.jpg/500px-Crystal_radio.jpg" alt="Crystal Radio" class="rounded mb-2 h-40 w-full object-contain"><h3 class="font-bold">Cat's Whisker Detector (c. 1906)</h3><p class="text-xs text-stone-600">Used in early crystal radios, this point-contact rectifier consisted of a fine wire ("whisker") touching a crystal of a semiconducting mineral like galena. It formed a crude, unreliable metal-semiconductor junction.</p></div>
+                </div>
+            </section>
+
+            <section id="bands" class="space-y-6 pt-10">
+                <div class="border-b border-stone-200 pb-4"><h2 class="text-2xl font-bold text-stone-900">1. Energy Band Structure</h2></div>
+                <p class="text-stone-700 leading-relaxed">When atoms form a crystal, their discrete electron orbitals merge into continuous <strong>Energy Bands</strong>. The properties of these bands dictate whether a material is a conductor, insulator, or semiconductor.</p>
+                <!-- Band Types Visual -->
+                <div class="grid md:grid-cols-3 gap-4 text-center">
+                    <div><div class="bg-white p-4 rounded-lg shadow-sm border h-48 flex flex-col justify-end relative"><div class="absolute top-0 left-0 w-full h-1/2 bg-blue-100 border-b-2 border-blue-200"></div><div class="absolute top-1/2 -mt-2 left-0 w-full h-1/2 bg-indigo-200"></div><span class="z-10 font-mono text-xs">Conduction & Valence <br/> Bands Overlap</span></div><h3 class="font-bold mt-2 text-sm">Conductor</h3></div>
+                    <div><div class="bg-white p-4 rounded-lg shadow-sm border h-48 flex flex-col justify-center"><div class="h-12 bg-blue-100 rounded-sm"></div><div class="h-8 text-xs flex items-center justify-center italic text-stone-400">Large Eg (~9eV)</div><div class="h-12 bg-indigo-200 rounded-sm"></div></div><h3 class="font-bold mt-2 text-sm">Insulator</h3></div>
+                    <div><div class="bg-white p-4 rounded-lg shadow-sm border h-48 flex flex-col justify-center"><div class="h-12 bg-blue-100 rounded-sm"></div><div class="h-4 text-xs flex items-center justify-center italic text-stone-400">Small Eg (~1eV)</div><div class="h-12 bg-indigo-200 rounded-sm"></div></div><h3 class="font-bold mt-2 text-sm">Semiconductor</h3></div>
+                </div>
+                 <!-- Direct vs Indirect -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border mt-8">
+                    <h3 class="font-bold text-lg mb-4">Direct vs. Indirect Bandgap</h3>
+                    <p class="text-sm text-stone-600 mb-4">The efficiency of light emission/absorption depends on the crystal momentum (k) alignment of the bands. This is shown in an Energy vs. Momentum (E-k) diagram.</p>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold text-center text-indigo-700">Direct Bandgap (e.g., GaAs)</h4>
+                            <canvas id="directBandgapCanvas"></canvas>
+                            <p class="text-xs text-stone-500 mt-2">The conduction band minimum and valence band maximum occur at the same momentum (k=0). An electron can fall directly, emitting a photon efficiently. This makes them ideal for light-emitting devices like **LEDs and laser diodes**.</p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-center text-orange-700">Indirect Bandgap (e.g., Si, Ge)</h4>
+                            <canvas id="indirectBandgapCanvas"></canvas>
+                            <p class="text-xs text-stone-500 mt-2">The minimum and maximum are at different momenta. As animated, recombination requires a change in both energy (photon) and momentum (phonon - a lattice vibration). This two-step process is inefficient for light emission, which is why **Silicon is not used for LEDs**, but is excellent for **transistors and solar cells** where light emission is not the goal.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="carriers" class="space-y-6 pt-10">
+                <div class="border-b border-stone-200 pb-4"><h2 class="text-2xl font-bold text-stone-900">2. Charge Carriers</h2></div>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl border-l-4 border-blue-500 shadow-sm card-hover">
+                        <div class="flex items-center mb-4"><div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold mr-3">-</div><h3 class="text-xl font-bold">Free Electrons (n)</h3></div>
+                        <p class="text-sm text-stone-600">When an electron gains enough energy (e.g., from heat or light) to jump to the conduction band, it becomes free to move and conduct electricity.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border-l-4 border-red-500 shadow-sm card-hover">
+                         <div class="flex items-center mb-4"><div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold mr-3">+</div><h3 class="text-xl font-bold">Holes (p)</h3></div>
+                        <p class="text-sm text-stone-600">The empty state left behind in the valence band is a "hole". It behaves as a positive charge carrier as adjacent electrons move to fill it.</p>
+                    </div>
+                </div>
+                <div class="bg-stone-900 p-4 rounded-xl text-white"><h3 class="text-center font-semibold text-sm mb-2">Generation & Recombination</h3><div class="h-40"><canvas id="ehpCanvas"></canvas></div></div>
+                <!-- Hall Effect -->
+                 <div class="bg-white p-6 rounded-xl shadow-sm border mt-8">
+                    <h3 class="font-bold text-lg mb-2">The Hall Effect: Proving Holes Exist</h3>
+                    <p class="text-xs text-stone-600 mb-4">The Hall Effect provides experimental proof for holes as positive charge carriers. When a magnetic field (B) is applied perpendicular to the current (I), the Lorentz force deflects charge carriers, creating a measurable Hall Voltage (V_H). The polarity of V_H reveals the sign of the carriers.</p>
+                    <div class="flex flex-col md:flex-row gap-4 items-center">
+                        <div class="flex-1 bg-stone-900 rounded-lg h-56 relative"><canvas id="hallEffectCanvas"></canvas></div>
+                        <div class="flex md:flex-col gap-2"><button onclick="setHallType('n')" id="btn-hall-n" class="w-full py-2 px-4 bg-blue-600 text-white rounded text-xs font-bold">N-Type</button><button onclick="setHallType('p')" id="btn-hall-p" class="w-full py-2 px-4 bg-red-600 text-white rounded text-xs font-bold">P-Type</button></div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="stats" class="space-y-6 pt-10">
+                <div class="border-b border-stone-200 pb-4"><h2 class="text-2xl font-bold text-stone-900">3. Statistical Mechanics</h2></div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                        <div><h3 class="font-bold text-lg">Fermi-Dirac Distribution $f(E)$</h3><p class="text-xs text-stone-500">The probability an energy state E is occupied by an electron.</p></div>
+                        <div class="mt-4 md:mt-0 flex items-center bg-stone-100 px-4 py-2 rounded-lg">
+                            <label for="tempSlider" class="text-sm font-semibold mr-3">Temp (T):</label>
+                            <input type="range" id="tempSlider" min="0" max="1000" step="50" value="300" class="slider-thumb h-2 bg-stone-300 rounded-lg appearance-none cursor-pointer w-32">
+                            <span id="tempValue" class="ml-3 text-sm font-mono w-12 text-right">300K</span>
+                        </div>
+                    </div>
+                    <div class="chart-container"><canvas id="fermiChart"></canvas></div>
+                    <div class="mt-6 formula-card">
+                        <h4 class="font-bold text-sm">Carrier Concentration</h4>
+                        <p class="text-xs mt-2">The number of electrons (n) and holes (p) depends on the Density of States $g(E)$ and the Fermi function. At normal temperatures, this can be approximated:</p>
+                        <p class="text-center mt-2 text-indigo-800">$n \propto e^{-(E_c - E_F)/kT}$</p>
+                        <p class="text-center mt-1 text-red-800">$p \propto e^{-(E_F - E_v)/kT}$</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="doping" class="space-y-6 pt-10">
+                <div class="border-b border-stone-200 pb-4">
+                    <h2 class="text-2xl font-bold text-stone-900">4. Doping: Controlling Carrier Concentration</h2>
+                    <p class="text-stone-500 mt-1">Watch how impurities change the crystal and energy bands.</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-6">
+                    <button onclick="setDoping('intrinsic')" id="btn-doping-intrinsic" class="p-4 rounded-lg border-2 border-indigo-500 ring-2 ring-indigo-200 transition-all text-left">
+                        <div class="font-bold mb-1">Intrinsic (Pure)</div>
+                        <div class="text-xs text-stone-500">Pure Silicon. $n = p$. Fermi level is exactly in the middle of the gap.</div>
+                    </button>
+                    <button onclick="setDoping('n-type')" id="btn-doping-n-type" class="p-4 rounded-lg border-2 border-stone-200 hover:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-left">
+                        <div class="font-bold mb-1 text-blue-700">N-Type (Donors)</div>
+                        <div class="text-xs text-stone-500">Add Phosphorus (Group V). Extra electrons. Fermi level moves UP towards $E_c$.</div>
+                    </button>
+                    <button onclick="setDoping('p-type')" id="btn-doping-p-type" class="p-4 rounded-lg border-2 border-stone-200 hover:border-red-500 focus:ring-2 focus:ring-red-200 transition-all text-left">
+                        <div class="font-bold mb-1 text-red-700">P-Type (Acceptors)</div>
+                        <div class="text-xs text-stone-500">Add Boron (Group III). Extra holes. Fermi level moves DOWN towards $E_v$.</div>
+                    </button>
+                </div>
+
+                <!-- Doping Visualizer -->
+                <div class="grid md:grid-cols-2 gap-6 items-center">
+                    <!-- Lattice Animation Canvas -->
+                    <div class="bg-stone-900 rounded-xl h-80">
+                         <canvas id="dopingAnimationCanvas"></canvas>
+                    </div>
+
+                    <!-- Div-based Band Diagram -->
+                    <div class="bg-stone-900 p-8 rounded-xl relative h-80 flex flex-col justify-center items-center transition-all duration-500" id="band-visualizer">
+                        <!-- Ec -->
+                        <div class="w-full border-b-2 border-stone-400 absolute top-10 flex justify-between px-4 items-center">
+                            <span class="text-stone-400 text-xs mono-font">Ec (Conduction)</span>
+                            <div id="electron-dots" class="flex space-x-2 transition-opacity duration-500"></div>
+                        </div>
+                        
+                        <!-- Donor/Acceptor Level -->
+                        <div id="dopant-level" class="w-full border-t border-dotted opacity-0 absolute transition-all duration-700 flex justify-start px-4">
+                             <span id="dopant-level-label" class="text-xs -mt-5 mono-font"></span>
+                        </div>
+
+                        <!-- Fermi Level Line -->
+                        <div id="fermi-line" class="w-full border-t border-dashed border-yellow-400 absolute top-1/2 transition-all duration-700 flex justify-end px-4">
+                            <span class="text-yellow-400 text-xs -mt-5 mono-font">Fermi Level (Ef)</span>
+                        </div>
+
+                        <!-- Intrinsic Level Line (Reference) -->
+                        <div class="w-full border-t border-dotted border-stone-700 absolute top-1/2"></div>
+
+                        <!-- Ev -->
+                        <div class="w-full border-t-2 border-stone-400 absolute bottom-10 flex justify-between px-4 items-center">
+                            <span class="text-stone-400 text-xs mono-font">Ev (Valence)</span>
+                            <div id="hole-dots" class="flex space-x-2 transition-opacity duration-500"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="transport" class="space-y-6 pt-10">
+                <div class="border-b border-stone-200 pb-4"><h2 class="text-2xl font-bold text-stone-900">5. Transport Mechanisms</h2></div>
+                <div class="flex flex-col md:flex-row gap-8">
+                    <div class="md:w-1/3 space-y-4">
+                        <div class="bg-white p-4 rounded shadow-sm border border-stone-100">
+                            <h4 class="font-bold text-indigo-700">Drift & Diffusion</h4>
+                            <p class="text-xs text-stone-600 mt-1">Carriers move via E-fields (Drift) or concentration gradients (Diffusion).</p>
+                        </div>
+                        <div class="space-y-2 pt-4">
+                            <button id="btn-thermal" onclick="toggleField(false)" class="w-full py-2 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-bold transition-opacity">Thermal Only</button>
+                            <button id="btn-efield" onclick="toggleField(true)" class="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold transition-opacity opacity-50">Apply E-Field</button>
+                        </div>
+                    </div>
+                    <div class="md:w-2/3"><div class="sim-container"><canvas id="transportCanvas"></canvas></div></div>
+                </div>
+                 <div class="mt-6 formula-card">
+                    <h4 class="font-bold text-sm">Drift Current Formalism</h4>
+                    <p class="text-xs mt-2">In an E-field, a carrier accelerates but collides with the lattice, reaching an average drift velocity $v_d = \mu E$. The proportionality constant $\mu$ is the mobility. The resulting current density is $J = nqv_d$.</p>
+                    <p class="text-xs mt-2">Mobility depends on the mean time between collisions ($\tau$, relaxation time) and the carrier's effective mass ($m^*$): $\mu = q\tau / m^*$</p>
+                </div>
+            </section>
+            
+            <section id="pn-junction" class="space-y-6 pt-10">
+                <div class="border-b border-stone-200 pb-4"><h2 class="text-2xl font-bold text-stone-900">6. The P-N Junction Diode</h2></div>
+                <p class="text-stone-700 leading-relaxed">The P-N junction, first discovered by Russell Ohl at Bell Labs in 1939, is the fundamental building block of most semiconductor devices. It is formed by joining P-type and N-type materials, creating an interface that allows current to flow easily in only one direction.</p>
+                <div class="grid md:grid-cols-12 gap-6">
+                    <div class="md:col-span-12 bg-white p-6 rounded-xl shadow-lg border border-stone-200 space-y-6">
+                        <div class="flex flex-col md:flex-row justify-between items-start">
+                            <div><h3 class="font-bold text-xl">Dynamic Lattice View</h3><p class="text-xs text-stone-500">Watch particles and the depletion region respond to applied voltage.</p></div>
+                            <div class="flex items-center space-x-4 bg-stone-100 p-3 rounded-lg mt-4 md:mt-0">
+                                <span class="text-[10px] font-bold text-red-600">REVERSE</span>
+                                <input type="range" id="pnBiasSlider" min="-5" max="1.2" step="0.05" value="0" class="slider-thumb h-2 bg-stone-300 w-48 rounded-lg appearance-none">
+                                <span class="text-[10px] font-bold text-green-600">FORWARD</span>
+                                <span id="pnBiasVal" class="text-sm font-mono font-bold w-16 text-right">0.0V</span>
+                            </div>
+                        </div>
+                        <div class="grid md:grid-cols-12 gap-4">
+                            <div class="md:col-span-9 bg-stone-900 rounded-lg overflow-hidden relative" style="height: 350px;">
+                                <canvas id="pnLatticeCanvas"></canvas>
+                                <div class="absolute top-4 left-4 text-red-500 font-bold opacity-30 text-6xl pointer-events-none">P</div>
+                                <div class="absolute top-4 right-4 text-blue-500 font-bold opacity-30 text-6xl pointer-events-none">N</div>
+                                <div id="depletion-label" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-yellow-400/20 px-2 py-1 rounded text-[10px] text-yellow-400 font-bold border border-yellow-400/50">Depletion Region</div>
+                            </div>
+                            <div class="md:col-span-3 h-full"><canvas id="pnCircuitCanvas"></canvas></div>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-3">
+                                <h4 class="font-bold text-stone-800 text-sm">Physical Processes</h4>
+                                <div class="text-xs text-stone-600 space-y-2 leading-relaxed">
+                                    <p><strong>At Equilibrium ($V=0$):</strong> Majority carriers diffuse across the junction (holes P→N, electrons N→P). This leaves behind immobile charged ions ($N_a^-$ in P, $N_d^+$ in N), forming the depletion region. This region's internal E-field creates a drift current that perfectly balances the diffusion current.</p>
+                                    <p><strong>Forward Bias ($V>0$):</strong> The external voltage opposes the internal field, shrinking the depletion region. This allows the massive diffusion current to flow, resulting in an exponential increase in total current.</p>
+                                    <p><strong>Reverse Bias ($V<0$):</strong> The external voltage aids the internal field, widening the depletion region and halting diffusion. Only a tiny reverse saturation current, composed of minority carriers drifting across the junction, can flow.</p>
+                                </div>
+                            </div>
+                            <div class="bg-stone-50 p-4 rounded-xl border border-stone-200">
+                                <h4 class="font-bold text-stone-800 text-sm mb-4">V-I Characteristic Curve (Shockley Equation)</h4>
+                                <div class="h-48"><canvas id="pnViChart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="zener" class="space-y-6 pt-10">
+                <div class="border-b border-stone-200 pb-4"><h2 class="text-2xl font-bold text-stone-900">7. Zener Diodes & Breakdown</h2></div>
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="space-y-6">
+                        <div class="bg-white p-6 rounded-xl shadow border border-stone-200">
+                            <h3 class="font-bold text-lg mb-4">Breakdown Mechanisms</h3>
+                            <div class="space-y-4">
+                                <div class="border-l-4 border-indigo-500 pl-4">
+                                    <h4 class="font-bold text-indigo-700 text-sm">1. Zener Breakdown</h4>
+                                    <p class="text-xs text-stone-600 mt-1">Dominant for $V_z < 5V$. In very heavily doped junctions, the depletion region is extremely thin (~10nm). The reverse bias creates a massive electric field ($>10^6$ V/cm) which is strong enough to rip electrons directly from their covalent bonds in the P-side valence band and pull them into the N-side conduction band. This is a quantum mechanical **tunneling** effect.</p>
+                                </div>
+                                <div class="border-l-4 border-orange-500 pl-4">
+                                    <h4 class="font-bold text-orange-700 text-sm">2. Avalanche Breakdown</h4>
+                                    <p class="text-xs text-stone-600 mt-1">Dominant for $V_z > 5V$. In more lightly doped junctions, a minority carrier is accelerated by the strong E-field, gaining significant kinetic energy. It then collides with a lattice atom with enough force to ionize it, creating a new electron-hole pair. These new carriers also accelerate and cause further **impact ionization**, leading to a rapid cascade (avalanche) of carriers and a large current.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-indigo-900 p-6 rounded-xl text-white relative h-64 overflow-hidden shadow-xl" id="breakdown-sim-box">
+                            <div class="absolute top-2 left-4 text-[10px] font-mono opacity-60">Breakdown Animation</div><canvas id="breakdownCanvas" class="w-full h-full"></canvas>
+                            <div class="absolute bottom-4 left-4 flex space-x-2"><button onclick="setBreakdownType('zener')" id="btn-zener" class="bg-indigo-600 hover:bg-indigo-500 px-3 py-1 rounded text-[10px] font-bold">Zener Mode</button><button onclick="setBreakdownType('avalanche')" id="btn-avalanche" class="bg-stone-700 hover:bg-stone-600 px-3 py-1 rounded text-[10px] font-bold">Avalanche Mode</button></div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow border border-stone-200 flex flex-col">
+                        <h3 class="font-bold text-lg mb-4">Zener V-I Characteristics</h3>
+                        <div class="flex-1"><canvas id="zenerViChart"></canvas></div>
+                        <div class="mt-4 p-3 bg-stone-50 rounded text-xs text-stone-600 font-mono">Note the sharp, well-defined breakdown at $V_z$. This allows the Zener diode to be used as a voltage reference or regulator.</div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="circuit" class="space-y-6 pt-10">
+                <div class="border-b border-stone-200 pb-4"><h2 class="text-2xl font-bold text-stone-900">8. Circuit & Fabrication Basics</h2></div>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+                        <h3 class="font-bold text-lg border-b pb-2">Load Line Analysis</h3>
+                        <p class="text-sm text-stone-600">Because the diode's I-V relationship is nonlinear, we can't solve circuits algebraically. Instead, we use a graphical method. For a simple series circuit ($V_S = IR + V_D$), we can plot this linear equation (the "Load Line") on the diode's characteristic curve. The intersection of the two lines is the operating point or Q-point of the circuit.</p>
+                        <div class="h-48"><canvas id="loadLineChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border space-y-4">
+                        <h3 class="font-bold text-lg border-b pb-2">Fabrication</h3>
+                        <p class="text-sm text-stone-600">Modern integrated circuits are built layer-by-layer on a pure silicon wafer using a series of complex photolithographic and chemical processes.</p>
+                        <ul class="text-xs space-y-2 text-stone-600">
+                            <li><strong>Oxidation:</strong> Growing high-purity Silicon Dioxide (SiO2) insulators.</li>
+                            <li><strong>Photolithography:</strong> Using UV light and photoresist to transfer circuit patterns from a mask to the wafer.</li>
+                            <li><strong>Etching:</strong> Chemically removing material from unprotected areas.</li>
+                            <li><strong>Ion Implantation:</strong> Firing dopant ions at high energy into the silicon to create precise P and N regions.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="pt-20 pb-10 text-center text-stone-400 text-xs">
+                <p>Interactive Physics Explorer</p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- JavaScript Implementation -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const debounce = (func, delay) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => func.apply(this, a), delay); }; };
+            let allCanvases = new Map();
+            let activeAnimations = new Map();
+
+            function manageAnimation(id, startFn, stopFn) {
+                const el = document.getElementById(id);
+                if(!el) return;
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            if (!activeAnimations.has(id)) {
+                                const animId = startFn();
+                                activeAnimations.set(id, { id: animId, stop: stopFn });
+                            }
+                        } else {
+                            if (activeAnimations.has(id)) {
+                                activeAnimations.get(id).stop(activeAnimations.get(id).id);
+                                activeAnimations.delete(id);
+                            }
+                        }
+                    });
+                }, { threshold: 0.1 });
+                observer.observe(el);
+            }
+            
+            function setupCanvas(id) {
+                const canvas = document.getElementById(id);
+                if (!canvas) return null;
+                const ctx = canvas.getContext('2d');
+                allCanvases.set(id, { canvas, ctx });
+                return { canvas, ctx };
+            }
+
+            function drawBandDiagram(id, type) {
+                const canvasData = allCanvases.get(id);
+                if (!canvasData) return;
+                const { canvas, ctx } = canvasData;
+                const { width, height } = canvas;
+                const vb_top = height * 0.7; const cb_bottom = height * 0.3; const k_center = width / 2;
+                
+                ctx.clearRect(0, 0, width, height);
+                ctx.strokeStyle = '#9ca3af'; ctx.setLineDash([2, 4]); ctx.beginPath(); ctx.moveTo(k_center, 0); ctx.lineTo(k_center, height); ctx.stroke(); ctx.setLineDash([]);
+                ctx.font = '10px Inter'; ctx.fillStyle = '#6b7280'; ctx.fillText('E', k_center + 5, 10); ctx.fillText('k=0', k_center + 5, height - 5);
+                
+                // Valence Band
+                ctx.lineWidth = 2; ctx.strokeStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(0, vb_top + 20); ctx.quadraticCurveTo(k_center, vb_top - 20, width, vb_top + 20); ctx.stroke();
+                
+                // Conduction Band
+                ctx.strokeStyle = '#3b82f6'; ctx.beginPath();
+                if (type === 'direct') {
+                    ctx.moveTo(0, cb_bottom - 20); ctx.quadraticCurveTo(k_center, cb_bottom + 20, width, cb_bottom - 20);
+                } else { // Indirect - Corrected
+                    const cb_min_k = width * 0.85;
+                    ctx.moveTo(0, cb_bottom + 50);
+                    ctx.quadraticCurveTo(width * 0.5, cb_bottom - 10, cb_min_k, cb_bottom - 20);
+                    ctx.quadraticCurveTo(width * 0.95, cb_bottom - 15, width, cb_bottom);
+                }
+                ctx.stroke();
+            }
+            
+            function initEHP() {
+                const canvasData = allCanvases.get('ehpCanvas');
+                if (!canvasData) return;
+                const { canvas, ctx } = canvasData;
+
+                // Generation state
+                let gen_photon = { x: canvas.width / 4, y: -20, active: true };
+                let gen_electron = null;
+                let gen_hole = null;
+
+                // Recombination state
+                let reco_electron = null;
+                let reco_hole = null;
+                let flash = null;
+                let reco_state = 'roaming';
+
+                function resetReco() {
+                    const { width, height } = canvas;
+                    reco_electron = { 
+                        x: width * 0.75 + (Math.random() - 0.5) * 50, 
+                        y: height * 0.2 + (Math.random() - 0.5) * height * 0.2, 
+                        vx: (Math.random() - 0.5) * 0.5 
+                    };
+                    reco_hole = { 
+                        x: width * 0.75 + (Math.random() - 0.5) * 50, 
+                        y: height * 0.8 + (Math.random() - 0.5) * height * 0.2, 
+                        vx: (Math.random() - 0.5) * 0.5 
+                    };
+                    reco_state = 'roaming';
+                }
+                resetReco();
+
+                function animate() {
+                    const { width, height } = canvas;
+                    const midX = width / 2;
+                    const cb_top = height * 0.4;
+                    const vb_top = height * 0.6;
+                    ctx.clearRect(0, 0, width, height);
+
+                    // Background Bands & Labels
+                    ctx.fillStyle = '#3b82f6'; ctx.fillRect(0, 0, width, cb_top);
+                    ctx.fillStyle = '#ef4444'; ctx.fillRect(0, vb_top, width, height * 0.4);
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; ctx.setLineDash([5, 5]);
+                    ctx.beginPath(); ctx.moveTo(midX, 0); ctx.lineTo(midX, height); ctx.stroke(); ctx.setLineDash([]);
+                    ctx.fillStyle = 'white'; ctx.font = '10px Mono'; ctx.textAlign = 'center';
+                    ctx.fillText('Generation (V → C)', width * 0.25, 15);
+                    ctx.fillText('Recombination (C → V)', width * 0.75, 15);
+
+
+                    // --- Generation (Left Side) ---
+                    if (gen_photon.active) {
+                        ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(gen_photon.x, gen_photon.y, 5, 0, 2 * Math.PI); ctx.fill();
+                        gen_photon.y += 2;
+                        if (gen_photon.y > vb_top) {
+                            gen_photon.active = false;
+                            gen_hole = { x: gen_photon.x, y: vb_top, vx: 1, vy: 0.2 };
+                            gen_electron = { x: gen_photon.x, y: vb_top, vx: -1, vy: -0.5, state: 'jumping' };
+                        }
+                    }
+                    
+                    if (gen_electron) {
+                        if (gen_electron.state === 'jumping') {
+                            gen_electron.y -= 3; // The V -> C jump
+                            if (gen_electron.y <= cb_top) {
+                                gen_electron.state = 'roaming';
+                            }
+                        } else { // roaming
+                            gen_electron.x += gen_electron.vx;
+                            gen_electron.y += gen_electron.vy;
+                            if (gen_electron.y < 0 || gen_electron.y > cb_top) gen_electron.vy *= -1;
+                            if (gen_electron.x < 0 || gen_electron.x > midX) gen_electron.vx *= -1;
+                        }
+                        ctx.fillStyle = '#60a5fa'; ctx.beginPath(); ctx.arc(gen_electron.x, gen_electron.y, 5, 0, 2 * Math.PI); ctx.fill();
+                    }
+
+                    if (gen_hole) {
+                        ctx.strokeStyle = '#f87171'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(gen_hole.x, gen_hole.y, 5, 0, 2 * Math.PI); ctx.stroke();
+                        gen_hole.x += gen_hole.vx;
+                        gen_hole.y += gen_hole.vy;
+                        if (gen_hole.y < vb_top || gen_hole.y > height) gen_hole.vy *= -1;
+                        if (gen_hole.x < 0 || gen_hole.x > midX) gen_hole.vx *= -1;
+                    }
+
+                    if (!gen_photon.active && (gen_electron === null || gen_electron.y > height)) {
+                        setTimeout(() => { gen_photon = { x: width/4, y: -20, active: true }; gen_electron = null; gen_hole = null; }, 1000);
+                    }
+
+                    // --- Recombination (Right Side) ---
+                    if (reco_electron && reco_hole) {
+                        if (reco_state === 'roaming') {
+                            reco_electron.x += reco_electron.vx;
+                            reco_hole.x += reco_hole.vx;
+
+                            if(reco_electron.x > width || reco_electron.x < midX) reco_electron.vx *= -1;
+                            if(reco_hole.x > width || reco_hole.x < midX) reco_hole.vx *= -1;
+                            
+                            if (Math.abs(reco_electron.x - reco_hole.x) < 15) {
+                                reco_state = 'falling';
+                            }
+                        } else if (reco_state === 'falling') {
+                            reco_electron.y += (reco_hole.y - reco_electron.y) * 0.1;
+                            reco_electron.x += (reco_hole.x - reco_electron.x) * 0.1;
+                            
+                            const dist = Math.hypot(reco_electron.x - reco_hole.x, reco_electron.y - reco_hole.y);
+                            if (dist < 8) {
+                                flash = { x: reco_electron.x, y: reco_hole.y, radius: 0 };
+                                reco_electron = null;
+                                reco_hole = null;
+                                setTimeout(resetReco, 1500);
+                            }
+                        }
+                        if(reco_electron) { ctx.fillStyle = '#60a5fa'; ctx.beginPath(); ctx.arc(reco_electron.x, reco_electron.y, 5, 0, 2 * Math.PI); ctx.fill(); }
+                        if(reco_hole) { ctx.strokeStyle = '#f87171'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(reco_hole.x, reco_hole.y, 5, 0, 2 * Math.PI); ctx.stroke(); }
+                    }
+
+                    if (flash) {
+                        ctx.strokeStyle = '#facc15'; ctx.lineWidth = 1.5;
+                        ctx.beginPath();
+                        for(let i=0; i<10; i++) ctx.lineTo(flash.x + (i%2 === 0 ? -2 : 2), flash.y - i*3 - flash.radius*0.5);
+                        ctx.stroke();
+                        ctx.strokeStyle = '#fb923c';
+                        ctx.beginPath();
+                        for(let i=0; i<10; i++) ctx.lineTo(flash.x + 10 + Math.sin(i*2)*3, flash.y - i*3 - flash.radius*0.5);
+                        ctx.stroke();
+                        flash.radius += 1;
+                        if (flash.radius > 30) flash = null;
+                    }
+
+                    return requestAnimationFrame(animate);
+                }
+                manageAnimation('ehpCanvas', animate, cancelAnimationFrame);
+            }
+
+            function initIndirectBandgapAnimation() {
+                const canvasData = allCanvases.get('indirectBandgapCanvas');
+                if (!canvasData) return;
+                const { canvas, ctx } = canvasData;
+                
+                let electron = { x: 0, y: 0, state: 'start' };
+                let phonon = { x: 0, y: 0, progress: 0, active: false };
+                let photon = { x: 0, y: 0, progress: 0, active: false };
+
+                function reset() {
+                    const { width, height } = canvas;
+                    const cb_bottom = height * 0.3;
+                    const vb_top = height * 0.7;
+                    const k_center = width / 2;
+                    const cb_min_k = width * 0.85;
+                    const cb_min_y = cb_bottom - 20;
+
+                    electron = {
+                        x: cb_min_k, y: cb_min_y,
+                        targetX: k_center, targetY: vb_top - 20,
+                        state: 'start',
+                    };
+                    phonon.active = false;
+                    photon.active = false;
+                }
+                
+                function animate() {
+                    drawBandDiagram('indirectBandgapCanvas', 'indirect'); // Redraw background
+                    const { width, height } = canvas;
+                    const k_center = width / 2;
+
+                    switch(electron.state) {
+                        case 'start':
+                            electron.state = 'waiting';
+                            setTimeout(() => { 
+                                electron.state = 'emit_phonon';
+                                phonon.active = true;
+                                phonon.x = electron.x; phonon.y = electron.y;
+                                phonon.progress = 0;
+                            }, 1000);
+                            break;
+                        case 'emit_phonon':
+                            electron.x += (electron.targetX - electron.x) * 0.05;
+                            if (Math.abs(electron.x - electron.targetX) < 1) {
+                                electron.x = electron.targetX;
+                                electron.state = 'emit_photon';
+                                phonon.active = false;
+                                photon.active = true;
+                                photon.x = electron.x; photon.y = electron.y;
+                                photon.progress = 0;
+                            }
+                            break;
+                        case 'emit_photon':
+                            electron.y += (electron.targetY - electron.y) * 0.05;
+                             if (Math.abs(electron.y - electron.targetY) < 1) {
+                                electron.state = 'done';
+                                setTimeout(reset, 1500);
+                            }
+                            break;
+                    }
+
+                    // Draw electron
+                    ctx.fillStyle = '#60a5fa'; ctx.beginPath(); ctx.arc(electron.x, electron.y, 4, 0, 2*Math.PI); ctx.fill();
+
+                    // Draw phonon
+                    if(phonon.active) {
+                        phonon.progress += 2;
+                        ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 1.5; ctx.beginPath();
+                        for(let i=0; i<10; i++) ctx.lineTo(phonon.x - i*2 - phonon.progress, phonon.y + Math.sin(i*2)*3);
+                        ctx.stroke();
+                        if (phonon.x - phonon.progress < 0) phonon.active = false;
+                    }
+
+                    // Draw photon
+                    if(photon.active) {
+                        photon.progress += 2;
+                        ctx.strokeStyle = '#facc15'; ctx.lineWidth = 1.5; ctx.beginPath();
+                        for(let i=0; i<10; i++) ctx.lineTo(photon.x + (i%2 === 0 ? -2 : 2), photon.y + i*2 + photon.progress);
+                        ctx.stroke();
+                        if (photon.y + photon.progress > height) photon.active = false;
+                    }
+
+                    return requestAnimationFrame(animate);
+                }
+                reset();
+                manageAnimation('indirectBandgapCanvas', animate, cancelAnimationFrame);
+            }
+
+            function initHallEffect() {
+                const canvasData = allCanvases.get('hallEffectCanvas');
+                if (!canvasData) return;
+                const { canvas, ctx } = canvasData;
+                let particles = []; let hallType = 'n';
+                window.setHallType = (type) => { hallType = type; particles = []; };
+                document.getElementById('btn-hall-n').classList.add('bg-opacity-50');
+                
+                function animate() {
+                    const { width, height } = canvas;
+                    ctx.clearRect(0,0,width,height);
+                    ctx.fillStyle = '#374151'; ctx.fillRect(0, height*0.1, width, height*0.8);
+                    
+                    if(particles.length < 50) particles.push({x: 0, y: height/2 + (Math.random()-0.5)*height*0.7, vx: 2, vy: (hallType === 'n' ? -1: 1)});
+                    
+                    particles.forEach(p => {
+                        p.x += p.vx; p.y += p.vy * (p.x > width*0.2 && p.x < width*0.8 ? 1 : 0);
+                        if (p.y < height*0.1 || p.y > height*0.9) p.vy = 0;
+                        if(p.x > width) {p.x = 0; p.y = height/2 + (Math.random()-0.5)*height*0.7; p.vy = (hallType === 'n' ? -1: 1)}
+                        ctx.fillStyle = hallType === 'n' ? '#60a5fa' : '#f87171';
+                        ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 2*Math.PI); ctx.fill();
+                    });
+                     // Text
+                    ctx.fillStyle = 'white'; ctx.font = '10px Mono';
+                    ctx.fillText("B-Field (in)", width/2-20, height*0.3);
+                    ctx.fillText("I -->", 10, height/2);
+                    ctx.fillStyle = hallType==='n' ? '#60a5fa' : '#f87171';
+                    ctx.fillRect(width*0.2, hallType==='n' ? height-15 : 5, width*0.6, 10);
+                    ctx.fillText(hallType==='n' ? "- Vh +" : "+ Vh -", width/2 - 20, hallType==='n' ? height-20 : 30);
+                    
+                    return requestAnimationFrame(animate);
+                }
+                manageAnimation('hallEffectCanvas', animate, cancelAnimationFrame);
+            }
+
+            function initFermiChart() {
+                const canvasData = allCanvases.get('fermiChart');
+                if (!canvasData) return;
+                const fermiChart = new Chart(canvasData.ctx, {
+                    type: 'scatter', data: { datasets: [{ label: 'f(E)', data: [], borderColor: '#4f46e5', showLine: true, pointRadius: 0, borderWidth: 2 }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { min: 0, max: 1.1 }, y: { min: -0.5, max: 0.5 } } }
+                });
+                const updateFermiChart = (T) => {
+                    const data = []; const k=8.617e-5;
+                    for (let E = -0.5; E <= 0.5; E += 0.01) { data.push({x: T === 0 ? (E < 0 ? 1 : 0) : 1 / (1 + Math.exp(E / (k * T))), y: E}); }
+                    fermiChart.data.datasets[0].data = data; fermiChart.update('none');
+                };
+                document.getElementById('tempSlider').addEventListener('input', (e) => {
+                    document.getElementById('tempValue').textContent = `${e.target.value}K`;
+                    updateFermiChart(parseInt(e.target.value));
+                });
+                updateFermiChart(300);
+            }
+
+            function initDopingAnimation() {
+                const canvasData = allCanvases.get('dopingAnimationCanvas');
+                if (!canvasData) return;
+                const { canvas, ctx } = canvasData;
+                let atoms = [];
+                let currentDopingType = 'intrinsic';
+                const ATOM_RADIUS = 10;
+                const GRID_SPACING = 50;
+                const dopantIndices = [10, 22, 34];
+
+                const initializeAtoms = () => {
+                    atoms = [];
+                    const { width, height } = canvas;
+                    const cols = Math.floor(width / GRID_SPACING);
+                    const rows = Math.floor(height / GRID_SPACING);
+                    const xOffset = (width - (cols - 1) * GRID_SPACING) / 2;
+                    const yOffset = (height - (rows - 1) * GRID_SPACING) / 2;
+
+                    for (let r = 0; r < rows; r++) {
+                        for (let c = 0; c < cols; c++) {
+                            const x = c * GRID_SPACING + xOffset;
+                            const y = r * GRID_SPACING + yOffset;
+                            atoms.push({
+                                x: x, y: y,
+                                originalX: x, originalY: y,
+                                targetX: x, targetY: y,
+                                type: 'Si',
+                                radius: ATOM_RADIUS, targetRadius: ATOM_RADIUS,
+                                isAnimating: false
+                            });
+                        }
+                    }
+                };
+
+                const animate = () => {
+                    const { width, height } = canvas;
+                    ctx.clearRect(0, 0, width, height);
+
+                    atoms.forEach(atom => {
+                        if (atom.isAnimating) {
+                            atom.x += (atom.targetX - atom.x) * 0.08;
+                            atom.y += (atom.targetY - atom.y) * 0.08;
+                            atom.radius += (atom.targetRadius - atom.radius) * 0.08;
+                            if (Math.abs(atom.targetX - atom.x) < 0.5 && Math.abs(atom.targetY - atom.y) < 0.5) {
+                                atom.isAnimating = false;
+                                atom.x = atom.targetX;
+                                atom.y = atom.targetY;
+                                atom.radius = atom.targetRadius;
+                            }
+                        }
+
+                        let color = '#6b7280';
+                        if (atom.type === 'P') color = '#3b82f6';
+                        if (atom.type === 'B') color = '#ef4444';
+                        ctx.fillStyle = color;
+                        ctx.beginPath();
+                        ctx.arc(atom.x, atom.y, atom.radius, 0, 2 * Math.PI);
+                        ctx.fill();
+                        
+                        ctx.fillStyle = 'white'; ctx.font='10px Mono'; ctx.textAlign='center'; ctx.textBaseline='middle';
+                        if (atom.radius > 5) ctx.fillText(atom.type, atom.x, atom.y);
+
+                        if (atom.type === 'P' && !atom.isAnimating) {
+                             ctx.fillStyle='#60a5fa'; ctx.beginPath(); ctx.arc(atom.x + 15, atom.y - 15, 4, 0, 2*Math.PI); ctx.fill();
+                        }
+                        if (atom.type === 'B' && !atom.isAnimating) {
+                             ctx.strokeStyle='#f87171'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(atom.x + 15, atom.y - 15, 4, 0, 2*Math.PI); ctx.stroke();
+                        }
+                    });
+                    return requestAnimationFrame(animate);
+                };
+                
+                window.setDoping = (type) => {
+                    if (type === currentDopingType) return;
+                    currentDopingType = type;
+
+                    document.querySelectorAll('#doping button').forEach(b => {
+                        b.classList.remove('border-indigo-500', 'border-blue-500', 'border-red-500', 'ring-2', 'ring-indigo-200');
+                        b.classList.add('border-stone-200');
+                    });
+                    const button = document.getElementById(`btn-doping-${type}`);
+                    button.classList.remove('border-stone-200');
+                    const colorClass = type === 'n-type' ? 'border-blue-500' : type === 'p-type' ? 'border-red-500' : 'border-indigo-500';
+                    button.classList.add(colorClass, 'ring-2', 'ring-indigo-200');
+
+                    const newDopantType = type === 'n-type' ? 'P' : 'B';
+
+                    dopantIndices.forEach(i => {
+                        if (!atoms[i]) return;
+                        const atom = atoms[i];
+                        if (atom.type !== 'Si' || type !== 'intrinsic') {
+                             atom.targetY = -50;
+                             atom.isAnimating = true;
+                             atom.targetRadius = 0;
+                        }
+                    });
+
+                    setTimeout(() => {
+                        dopantIndices.forEach(i => {
+                            if (!atoms[i]) return;
+                            const atom = atoms[i];
+                            atom.type = (type === 'intrinsic') ? 'Si' : newDopantType;
+                            atom.y = canvas.height + 50;
+                            atom.radius = 0;
+                            atom.targetX = atom.originalX;
+                            atom.targetY = atom.originalY;
+                            atom.targetRadius = ATOM_RADIUS;
+                            atom.isAnimating = true;
+                        });
+                    }, 500);
+
+                    const fermiLine = document.getElementById('fermi-line');
+                    const electronDots = document.getElementById('electron-dots');
+                    const holeDots = document.getElementById('hole-dots');
+                    const dopantLevel = document.getElementById('dopant-level');
+                    const dopantLabel = document.getElementById('dopant-level-label');
+
+                    electronDots.innerHTML = '';
+                    holeDots.innerHTML = '';
+                    dopantLevel.style.opacity = 0;
+
+                    if (type === 'n-type') {
+                        fermiLine.style.top = 'calc(50% - 70px)';
+                        electronDots.innerHTML = '<div class="w-3 h-3 rounded-full bg-blue-400"></div>'.repeat(5);
+                        dopantLevel.style.top = 'calc(50% - 90px)';
+                        dopantLevel.style.borderColor = '#3b82f6';
+                        dopantLabel.innerText = 'Ed (Donor)';
+                        dopantLabel.style.color = '#3b82f6';
+                        dopantLevel.style.opacity = 1;
+                    } else if (type === 'p-type') {
+                        fermiLine.style.top = 'calc(50% + 70px)';
+                        holeDots.innerHTML = '<div class="w-3 h-3 rounded-full border-2 border-red-400"></div>'.repeat(5);
+                        dopantLevel.style.top = 'calc(50% + 90px)';
+                        dopantLevel.style.borderColor = '#ef4444';
+                        dopantLabel.innerText = 'Ea (Acceptor)';
+                        dopantLabel.style.color = '#ef4444';
+                        dopantLevel.style.opacity = 1;
+                    } else { // intrinsic
+                        fermiLine.style.top = '50%';
+                        electronDots.innerHTML = '<div class="w-3 h-3 rounded-full bg-blue-400 opacity-50"></div>';
+                        holeDots.innerHTML = '<div class="w-3 h-3 rounded-full border-2 border-red-400 opacity-50"></div>';
+                    }
+                };
+
+                initializeAtoms();
+                setDoping('intrinsic');
+                manageAnimation('dopingAnimationCanvas', animate, cancelAnimationFrame);
+            }
+
+            function initTransport() {
+                const canvasData = allCanvases.get('transportCanvas');
+                if(!canvasData) return;
+                const { canvas, ctx } = canvasData;
+                let particles = Array.from({length: 80}, () => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: 3 }));
+                let fieldOn = false;
+                window.toggleField = (state) => {
+                    fieldOn = state;
+                    document.getElementById('btn-thermal').classList.toggle('opacity-50', state);
+                    document.getElementById('btn-efield').classList.toggle('opacity-50', !state);
+                };
+
+                const animate = () => {
+                    ctx.clearRect(0,0,canvas.width,canvas.height);
+                    if (fieldOn) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.font = '12px "JetBrains Mono"';
+                        ctx.textAlign = 'left';
+                        ctx.fillText('E-Field', 10, 20);
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(70, 16); ctx.lineTo(canvas.width - 20, 16);
+                        ctx.moveTo(canvas.width - 20, 16); ctx.lineTo(canvas.width - 30, 11);
+                        ctx.moveTo(canvas.width - 20, 16); ctx.lineTo(canvas.width - 30, 21);
+                        ctx.stroke();
+                    }
+                    particles.forEach(p => {
+                        p.x += (Math.random()-0.5)*4 + (fieldOn ? 2 : 0);
+                        p.y += (Math.random()-0.5)*4;
+                        if(p.x > canvas.width) p.x=0; if(p.x < 0) p.x=canvas.width;
+                        if(p.y > canvas.height) p.y=0; if(p.y < 0) p.y=canvas.height;
+                        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fillStyle = '#4f46e5'; ctx.fill();
+                    });
+                    return requestAnimationFrame(animate);
+                };
+                manageAnimation('transportCanvas', animate, cancelAnimationFrame);
+            }
+
+            function initPNJunction() {
+                const latticeData = allCanvases.get('pnLatticeCanvas'), circuitData = allCanvases.get('pnCircuitCanvas'), viData = allCanvases.get('pnViChart');
+                if(!latticeData || !circuitData || !viData) return;
+                let pnBias = 0; let particles = [];
+                const initParticles = () => {
+                    particles = [];
+                    const { width, height } = latticeData.canvas;
+                    for(let i = 0; i<80; i++) {
+                        const isP = Math.random() < 0.5;
+                        const isMajority = Math.random() < 0.95;
+                        particles.push({
+                            x: isP ? Math.random()*width/2 : width/2+Math.random()*width/2, y: Math.random()*height,
+                            type: isP ? (isMajority ? 'hole' : 'electron') : (isMajority ? 'electron' : 'hole'),
+                            isFixed: false, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5
+                        });
+                    }
+                    for(let i=-20; i<20; i+=4) { // Fixed ions
+                        particles.push({ x: width/2+i, y: Math.random()*height, type: i<0 ? 'acceptor' : 'donor', isFixed: true });
+                    }
+                };
+
+                const animateLattice = () => {
+                    const { canvas, ctx } = latticeData;
+                    const { width, height } = canvas;
+                    ctx.clearRect(0,0,width,height);
+                    const depletionWidth = Math.max(10, 40 - pnBias * 30);
+                    ctx.fillStyle = 'rgba(251, 191, 36, 0.1)'; ctx.fillRect(width/2 - depletionWidth/2, 0, depletionWidth, height);
+                    
+                    ctx.font = '10px "JetBrains Mono"';
+                    
+                    ctx.textAlign = 'left';
+                    ctx.fillStyle = 'rgba(248, 113, 113, 0.8)'; 
+                    ctx.fillText('Holes (Majority)', 10, height - 40);
+                    ctx.fillStyle = 'rgba(96, 165, 250, 0.6)'; 
+                    ctx.fillText('Electrons (Minority)', 10, height - 28);
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.8)'; 
+                    ctx.fillText('Fixed Acceptor Ions (-)', 10, height - 16);
+
+                    ctx.textAlign = 'right';
+                    ctx.fillStyle = 'rgba(96, 165, 250, 0.8)'; 
+                    ctx.fillText('Electrons (Majority)', width - 10, height - 40);
+                    ctx.fillStyle = 'rgba(248, 113, 113, 0.6)'; 
+                    ctx.fillText('Holes (Minority)', width - 10, height - 28);
+                    ctx.fillStyle = 'rgba(59, 130, 246, 0.8)'; 
+                    ctx.fillText('Fixed Donor Ions (+)', width - 10, height - 16);
+
+                    particles.forEach(p => {
+                        if(!p.isFixed) {
+                           let drift = 0; if (p.x > width/2 - depletionWidth/2 && p.x < width/2 + depletionWidth/2) drift = (p.type==='hole' ? 1 : -1) * 0.5;
+                           p.x += p.vx + drift - (p.type==='hole' ? -pnBias*0.5 : pnBias*0.5); p.y += p.vy;
+                           if(p.x > width) p.x=0; if(p.x<0) p.x=width; if(p.y > height) p.y=0; if(p.y < 0) p.y=height;
+                        }
+                        ctx.beginPath();
+                        if(p.type==='electron') { ctx.fillStyle='#60a5fa'; ctx.arc(p.x, p.y, 3, 0, 2*Math.PI); ctx.fill(); }
+                        else if(p.type==='hole') { ctx.strokeStyle='#f87171'; ctx.lineWidth=1.5; ctx.arc(p.x, p.y, 3, 0, 2*Math.PI); ctx.stroke(); }
+                        else if(p.type==='donor') { ctx.fillStyle='#3b82f6'; ctx.fillRect(p.x-2, p.y-2, 4, 4); } 
+                        else if(p.type==='acceptor') { ctx.fillStyle='#ef4444'; ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, 2*Math.PI); ctx.fill(); } 
+                    });
+                    return requestAnimationFrame(animateLattice);
+                };
+                
+                const drawCircuit = () => {
+                    const { canvas, ctx } = circuitData;
+                    const { width, height } = canvas;
+                    ctx.clearRect(0,0,width,height);
+                    const cx = width/2, cy = height/2;
+                    // Diode
+                    ctx.strokeStyle='black'; ctx.lineWidth=2;
+                    ctx.beginPath(); ctx.moveTo(cx, cy-40); ctx.lineTo(cx, cy-10); ctx.moveTo(cx-20, cy+10); ctx.lineTo(cx+20, cy+10); ctx.moveTo(cx, cy-10); ctx.lineTo(cx-20, cy+10); ctx.lineTo(cx+20, cy+10); ctx.closePath(); ctx.stroke();
+                    // Wires
+                    ctx.beginPath(); ctx.moveTo(cx, cy-40); ctx.lineTo(cx, 20); ctx.lineTo(cx-40,20); ctx.moveTo(cx, cy+10); ctx.lineTo(cx, height-20); ctx.lineTo(cx-40, height-20); ctx.stroke();
+                    // Battery
+                    const vPos = pnBias > 0 ? 20 : height-20, vNeg = pnBias > 0 ? height-20 : 20;
+                    ctx.beginPath(); ctx.moveTo(cx-40, vPos-10); ctx.lineTo(cx-40, vPos+10); ctx.moveTo(cx-50, vPos-15); ctx.lineTo(cx-30, vPos-15); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(cx-40, vNeg-5); ctx.lineTo(cx-40, vNeg+5); ctx.moveTo(cx-45, vNeg-8); ctx.lineTo(cx-35, vNeg-8); ctx.stroke();
+                };
+
+                const viChart = new Chart(viData.ctx, {
+                    type: 'line',
+                    data: { datasets: [ { label: 'Diode Current', data: [], borderColor: '#4f46e5', pointRadius: 0 }, { label: 'Q-Point', data: [], type: 'scatter', backgroundColor: '#ef4444', pointRadius: 5 } ]},
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { title: {display:true, text:'V (Volts)'}}, y: { title: {display:true, text:'I (mA)'}} } }
+                });
+                const updateViChart = () => {
+                    const Is=1e-9, n=1.5, Vt=0.0258;
+                    const data = [], labels = [];
+                    for(let v = -5; v <= 1.2; v+=0.1) {
+                        labels.push(v.toFixed(1));
+                        data.push(Is * (Math.exp(v/(n*Vt)) - 1) * 1000); // in mA
+                    }
+                    viChart.data.labels = labels;
+                    viChart.data.datasets[0].data = data;
+                    const current = Is * (Math.exp(pnBias/(n*Vt))-1) * 1000;
+                    viChart.data.datasets[1].data = [{x: pnBias, y: current}];
+                    viChart.update('none');
+                };
+
+                document.getElementById('pnBiasSlider').addEventListener('input', e => {
+                    pnBias = parseFloat(e.target.value);
+                    document.getElementById('pnBiasVal').textContent = `${pnBias.toFixed(2)}V`;
+                    drawCircuit();
+                    updateViChart();
+                });
+                
+                initParticles();
+                drawCircuit();
+                updateViChart();
+                manageAnimation('pnLatticeCanvas', animateLattice, cancelAnimationFrame);
+            }
+            
+            function initBreakdown() {
+                const canvasData = allCanvases.get('breakdownCanvas');
+                if(!canvasData) return;
+                let breakdownType = 'zener'; let particles = [];
+                window.setBreakdownType = (type) => {
+                    breakdownType = type; particles = [];
+                    document.getElementById('btn-zener').classList.toggle('bg-indigo-600', type==='zener'); document.getElementById('btn-zener').classList.toggle('bg-stone-700', type!=='zener');
+                    document.getElementById('btn-avalanche').classList.toggle('bg-indigo-600', type==='avalanche'); document.getElementById('btn-avalanche').classList.toggle('bg-stone-700', type!=='avalanche');
+                };
+                
+                const animate = () => {
+                    const { canvas, ctx } = canvasData;
+                    const { width, height } = canvas;
+                    ctx.clearRect(0,0,width,height);
+                    const depletionW = breakdownType === 'zener' ? 20 : 100;
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'; ctx.fillRect(width/2 - depletionW/2, 0, depletionW, height);
+                    
+                    if (Math.random() > 0.95) {
+                        if(breakdownType === 'zener' && particles.length < 50) particles.push({x: width/2+depletionW, y: Math.random()*height, type: 'electron', vx: -1});
+                        else if(breakdownType === 'avalanche' && particles.length < 2) particles.push({x: width-10, y: Math.random()*height, type: 'electron', vx: -3});
+                    }
+
+                    particles.forEach((p, i) => {
+                        p.x += p.vx;
+                        if(breakdownType==='avalanche' && p.type==='electron' && Math.random()>0.99 && p.x > 50 && p.x < width-50) {
+                            particles.push({x:p.x, y:p.y+5, type:'electron', vx: -3}); particles.push({x:p.x, y:p.y-5, type:'hole', vx: 1});
+                        }
+                        if(p.type==='hole') p.x += 1;
+                        if(p.x < 0 || p.x > width) particles.splice(i,1);
+                        ctx.fillStyle = p.type==='electron' ? '#60a5fa' : '#f87171'; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 2*Math.PI); ctx.fill();
+                    });
+                    if(particles.length>100) particles.shift();
+                    
+                    return requestAnimationFrame(animate);
+                };
+                setBreakdownType('zener');
+                manageAnimation('breakdownCanvas', animate, cancelAnimationFrame);
+            }
+
+            function initZenerChart() {
+                const canvasData = allCanvases.get('zenerViChart'); if(!canvasData) return;
+                new Chart(canvasData.ctx, {
+                    type:'line',
+                    data: { labels: Array.from({length:40}, (_,i)=>(i-30)*0.25), datasets: [{ label:'Zener IV', data: Array.from({length:40}, (_,i)=>{ const v=(i-30)*0.25; if(v<-5.6) return -50; if(v<0) return -0.1; return 0.1*(Math.exp(v*3)-1);}), borderColor:'#4f46e5', stepped:'before'}]},
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { title:{display:true, text:'V'}}, y:{title:{display:true, text:'I'}} } }
+                });
+            }
+
+            function initLoadLine() {
+                const canvasData = allCanvases.get('loadLineChart'); if(!canvasData) return;
+                new Chart(canvasData.ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: [
+                            { label: 'Diode Curve', data: Array.from({length:20},(_,i)=>{const v=i*0.1; return {x:v, y: 1e-9*(Math.exp(v/0.04)-1)*1000}}), borderColor:'#4f46e5' },
+                            { label: 'Load Line', data: [{x:0, y:5}, {x:2.5, y:0}], borderColor:'#ef4444', showLine:true, fill:false},
+                            { label: 'Q-Point', data: [{x:0.7, y:3.6}], type: 'scatter', backgroundColor: 'black', pointRadius: 5}
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { type: 'linear', position: 'bottom', min:0, max:3, title:{text:'Vd (V)'}}, y:{min:0, max:6, title:{text:'Id (mA)'}} } }
+                });
+            }
+
+            // --- Init & Nav ---
+            const resizeAllCanvases = () => {
+                allCanvases.forEach(({ canvas }) => {
+                    if(canvas.parentElement.clientWidth > 0) { canvas.width = canvas.parentElement.clientWidth; canvas.height = canvas.parentElement.clientHeight; }
+                });
+                // Redraw static canvases
+                drawBandDiagram('directBandgapCanvas', 'direct');
+                // indirectBandgapCanvas is now handled by its own animation loop
+                initZenerChart(); initLoadLine();
+                // Re-initialize atoms for new canvas size
+                if (window.initDopingLattice) window.initDopingLattice();
+            };
+            
+            const sections = document.querySelectorAll('main section');
+            const navObserver = new IntersectionObserver(entries => {
+                entries.forEach(e => { if(e.isIntersecting){ document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active')); document.getElementById('nav-'+e.target.id)?.classList.add('active'); }});
+            }, { rootMargin: '-40% 0px -60% 0px'});
+            sections.forEach(s => navObserver.observe(s));
+            window.scrollToSection = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+
+            // Initialize all canvases and animations
+            ['directBandgapCanvas', 'indirectBandgapCanvas', 'ehpCanvas', 'hallEffectCanvas', 'fermiChart', 'dopingAnimationCanvas', 'transportCanvas', 'pnLatticeCanvas', 'pnCircuitCanvas', 'pnViChart', 'breakdownCanvas', 'zenerViChart', 'loadLineChart'].forEach(setupCanvas);
+            
+            initEHP();
+            initIndirectBandgapAnimation();
+            initHallEffect();
+            initFermiChart();
+            initDopingAnimation();
+            initTransport();
+            initPNJunction();
+            initBreakdown();
+
+            window.addEventListener('resize', debounce(resizeAllCanvases, 250));
+            resizeAllCanvases();
+            document.getElementById('nav-intro')?.classList.add('active');
+        });
+    </script>
+</body>
+</html>
